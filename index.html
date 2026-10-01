@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scene Consistency Classroom Demonstration</title>
+
+  <script src="https://unpkg.com/jspsych@7.3.4"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-preload@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.2.0"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-image-keyboard-response@1.1.3"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.1.2"></script>
+  <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+    }
+
+    .jspsych-display-element {
+      background: #000;
+    }
+
+    .instruction {
+      max-width: 900px;
+      margin: 0 auto;
+      font-size: 30px;
+      line-height: 1.55;
+      text-align: center;
+    }
+
+    .response-prompt {
+      font-size: 38px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .trial-number {
+      margin-top: 35px;
+      color: #aaa;
+      font-size: 22px;
+    }
+
+    .fixation {
+      font-size: 64px;
+      line-height: 1;
+    }
+
+    .stimulus-image {
+      width: min(1000px, 85vw);
+      height: auto;
+    }
+  </style>
+</head>
+
+<body></body>
+
+<script>
+  /*
+    Expected folder structure
+
+    scene_consistency_classroom.html
+    images/
+      stage_ballerina.png
+      park_bull.png
+      ...
+    masks/
+      000.png
+      001.png
+      ...
+      020.png
+
+    If your filenames differ, edit only the `image` values below.
+  */
+
+  const SCENE_DURATION = 80;
+  const MASK_DURATION = 200;
+  const RESPONSE_DURATION = 6000;
+  const FIXATION_DURATION = 300;
+  const BLANK_DURATION = 200;
+
+  const foregroundTrials = [
+    { image: "images/S00_Stage_Ballerina.png",                    condition: "congruent",   pair: "stage-road" },
+    { image: "images/S05_Park_Bull.png",                          condition: "incongruent", pair: "park-arena" },
+    { image: "images/S01_LivingRoom_Sofa.png",                    condition: "congruent",   pair: "livingroom-plains" },
+    { image: "images/S06_BowlingAlley_Buffalo.png",               condition: "incongruent", pair: "bowling-range" },
+    { image: "images/S02_FootballField_FootballPlayer.png",       condition: "congruent",   pair: "football-church" },
+    { image: "images/S07_IceRink_RaceHorse.png",                  condition: "incongruent", pair: "icerink-horsetrack" },
+    { image: "images/S03_Beach_SandCastle.png",                   condition: "congruent",   pair: "beach-mud" },
+    { image: "images/S08_Intersection_Camel.png",                 condition: "incongruent", pair: "intersection-desert" },
+    { image: "images/S04_Farm_Tractor.png",                       condition: "congruent",   pair: "farm-racetrack" },
+    { image: "images/S09_SnowyMountain_Duck.png",                 condition: "incongruent", pair: "mountain-lake" }
+  ];
+
+  const backgroundTrials = [
+    { image: "images/S05_Park_jogger.png",                        condition: "congruent",   pair: "park-arena" },
+    { image: "images/S00_Road_Ballerina.png",                     condition: "incongruent", pair: "stage-road" },
+    { image: "images/S06_BowlingAlley_Bowler.png",                condition: "congruent",   pair: "bowling-range" },
+    { image: "images/S01_AfricanPlains_Sofa.png",                 condition: "incongruent", pair: "livingroom-plains" },
+    { image: "images/S07_IceRink_FigureSkater.png",               condition: "congruent",   pair: "icerink-horsetrack" },
+    { image: "images/S02_ChurchSanctuary_FootballPlayer.png",     condition: "incongruent", pair: "football-church" },
+    { image: "images/S08_Intersection_Ambulance.png",             condition: "congruent",   pair: "intersection-desert" },
+    { image: "images/S03_Mudfield_SandCastle.png",                condition: "incongruent", pair: "beach-mud" },
+    { image: "images/S09_SnowyMountain_Sledder.png",              condition: "congruent",   pair: "mountain-lake" },
+    { image: "images/S04_RaceTrack_Tractor.png",                  condition: "incongruent", pair: "farm-racetrack" }
+  ];
+
+  const maskFiles = Array.from(
+    { length: 21 },
+    (_, i) => `masks/mask${String(i).padStart(3, "0")}.png`
+  );
+
+  const jsPsych = initJsPsych({
+    show_progress_bar: false,
+    on_finish: function () {
+      // No response data are collected because students answer on paper.
+      // Uncomment the next line if you want to inspect timing data.
+      // jsPsych.data.displayData();
+    }
+  });
+
+  const timeline = [];
+
+  timeline.push({
+    type: jsPsychPreload,
+    images: [
+      ...foregroundTrials.map(t => t.image),
+      ...backgroundTrials.map(t => t.image),
+      ...maskFiles
+    ],
+    message: "<p style='font-size:28px'>Loading images...</p>",
+    error_message: "<p>Some images could not be loaded. Please check the filenames and folders.</p>",
+    continue_after_error: false
+  });
+
+  timeline.push({
+    type: jsPsychFullscreen,
+    fullscreen_mode: true,
+    message: `
+      <div class="instruction">
+        <p>This demonstration will run in full-screen mode.</p>
+        <p>Please make sure everyone is ready before continuing.</p>
+      </div>
+    `,
+    button_label: "Enter full screen"
+  });
+
+  timeline.push({
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+      <div class="instruction">
+        <h2>Block 1: Foreground Object</h2>
+        <p>A scene will appear very briefly.</p>
+        <p>Write down the object, animal, or person that appeared prominently in the foreground.</p>
+        <p>Please write only one answer and do not discuss it with others.</p>
+      </div>
+    `,
+    choices: ["Begin Block 1"]
+  });
+
+  function addSceneTrial(trial, task, trialNumber, maskFile) {
+    timeline.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '<div class="fixation">+</div>',
+      choices: "NO_KEYS",
+      trial_duration: FIXATION_DURATION,
+      data: { phase: "fixation", task, trial_number: trialNumber }
+    });
+
+    timeline.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "",
+      choices: "NO_KEYS",
+      trial_duration: BLANK_DURATION,
+      data: { phase: "blank", task, trial_number: trialNumber }
+    });
+
+    timeline.push({
+      type: jsPsychImageKeyboardResponse,
+      stimulus: trial.image,
+      stimulus_width: 1000,
+      maintain_aspect_ratio: true,
+      choices: "NO_KEYS",
+      trial_duration: SCENE_DURATION,
+      data: {
+        phase: "scene",
+        task,
+        trial_number: trialNumber,
+        condition: trial.condition,
+        pair: trial.pair,
+        image: trial.image
+      }
+    });
+
+    timeline.push({
+      type: jsPsychImageKeyboardResponse,
+      stimulus: maskFile,
+      stimulus_width: 1000,
+      maintain_aspect_ratio: true,
+      choices: "NO_KEYS",
+      trial_duration: MASK_DURATION,
+      data: { phase: "mask", task, trial_number: trialNumber, mask: maskFile }
+    });
+
+    const question = task === "foreground"
+      ? "What was the foreground object?"
+      : "What was the background setting?";
+
+    timeline.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: `
+        <div class="response-prompt">
+          <div>${question}</div>
+          <div class="trial-number">Trial ${trialNumber} / 20</div>
+        </div>
+      `,
+      choices: "NO_KEYS",
+      trial_duration: RESPONSE_DURATION,
+      data: { phase: "paper_response", task, trial_number: trialNumber }
+    });
+  }
+
+  // Randomly assign 20 different masks from the available 21 masks.
+  const assignedMasks = jsPsych.randomization.shuffle(maskFiles).slice(0, 20);
+
+  foregroundTrials.forEach((trial, index) => {
+    addSceneTrial(trial, "foreground", index + 1, assignedMasks[index]);
+  });
+
+  timeline.push({
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+      <div class="instruction">
+        <h2>Block 2: Background Setting</h2>
+        <p>The task has now changed.</p>
+        <p>Write down the type of place or setting shown in the background.</p>
+        <p>Ignore the prominent foreground object.</p>
+      </div>
+    `,
+    choices: ["Begin Block 2"]
+  });
+
+  backgroundTrials.forEach((trial, index) => {
+    addSceneTrial(trial, "background", index + 11, assignedMasks[index + 10]);
+  });
+
+  timeline.push({
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+      <div class="instruction">
+        <h2>End of demonstration</h2>
+        <p>Please put down your pen and wait for the results.</p>
+      </div>
+    `,
+    choices: ["Exit full screen"]
+  });
+
+  timeline.push({
+    type: jsPsychFullscreen,
+    fullscreen_mode: false
+  });
+
+  jsPsych.run(timeline);
+</script>
+</html>
